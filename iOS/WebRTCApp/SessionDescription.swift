@@ -10,16 +10,13 @@ import Foundation
 
 struct SessionDescription: Codable {
     let type: String
-    let sessionDescription: SDP
+    let description: String
     let candidate: Candidate?
-}
-
-struct SDP: Codable {
-    let sdp: String
 }
 
 struct Candidate: Codable {
     let sdp: String
-    let sdpMLineInedx: Int32
+    let sdpMLineIndex: Int
     let sdpMid: String?
+    let serverUrl: String?
 }

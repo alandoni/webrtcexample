@@ -11,8 +11,10 @@ import Starscream
 
 class WebSocketClient: NSObject {
 
+    static let HOST = "192.168.1.160"
+
     let webSocket: WebSocket = {
-        return WebSocket(url: URL(string: "ws://192.168.2.1:8080/connect")!)
+        return WebSocket(url: URL(string: "ws://\(WebSocketClient.HOST):8080/connect")!)
     }()
     var listener: WebSocketClientDelegate? = nil
 

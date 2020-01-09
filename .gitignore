@@ -1,0 +1,7 @@
+node_modules
+Pods
+build
+.idea
+.gradle
+*.iml
+gradle

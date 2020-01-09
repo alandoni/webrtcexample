@@ -59,7 +59,9 @@ class MainActivity : AppCompatActivity() {
             }
 
             override fun onAddStream(mediaStream: MediaStream?) {
-                mediaStream?.videoTracks?.get(0)?.addSink(rtc_other_renderer)
+                if (mediaStream?.videoTracks != null && mediaStream.videoTracks.size > 0) {
+                    mediaStream.videoTracks[0]?.addSink(rtc_other_renderer)
+                }
             }
         })
         rtcClient.configureRenderer(rtc_other_renderer)
@@ -75,10 +77,8 @@ class MainActivity : AppCompatActivity() {
 
             override fun onMessageReceived(message: String) {
                 val data = webSocketClient.gson.fromJson(message, JsonObject::class.java)
-                if (data.has(SERVER_URL_KEY)) {
-                    val candidate = webSocketClient.gson.fromJson(data, IceCandidate::class.java)
-                    rtcClient.addIceCandidate(candidate)
-                } else if (data.has(TYPE_KEY)) {
+
+                if (data.has(TYPE_KEY)) {
                     val sessionDescription = webSocketClient.gson.fromJson(data, SessionDescription::class.java)
                     if (data.get(TYPE_KEY).asString == OFFER) {
                         rtcClient.onRemoteSessionReceived(sessionDescription)
@@ -87,6 +87,9 @@ class MainActivity : AppCompatActivity() {
                     } else if (data.get(TYPE_KEY).asString == ANSWER) {
                         rtcClient.onRemoteSessionReceived(sessionDescription)
                     }
+                } else {
+                    val candidate = webSocketClient.gson.fromJson(data, IceCandidate::class.java)
+                    rtcClient.addIceCandidate(candidate)
                 }
             }
         }

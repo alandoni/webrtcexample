@@ -41,7 +41,7 @@ class RTCClient: NSObject {
         RTCPeerConnectionFactory.initialize()
 
         let audioTrack = self.audioTrack()
-        let labels = ["streams"]
+        let labels = ["StreamAudio"]
         self.peerConnection.add(audioTrack, streamIds: labels)
     }
 
@@ -63,6 +63,7 @@ class RTCClient: NSObject {
                         print("Error making offer local: \(error.debugDescription)")
                     }
                 })
+                self.observer.onCreateSuccess(sessionDescription: description)
             }
         })
     }
@@ -78,6 +79,7 @@ class RTCClient: NSObject {
                         print("Error answering local: \(error.debugDescription)")
                     }
                 })
+                self.observer.onCreateSuccess(sessionDescription: description)
             }
         })
     }
@@ -116,7 +118,7 @@ class RTCClient: NSObject {
             capturer.startCapture(with: device!, format: RTCCameraVideoCapturer.supportedFormats(for: device!).last!, fps: 60)
         } else {
             let capturer = RTCFileVideoCapturer(delegate: localVideoSource)
-            if let _ = Bundle.main.path(forResource: "sample.mp4", ofType: nil) {
+            if let _ = Bundle.main.url(forResource: "sample", withExtension: "mp4") {
                 capturer.startCapturing(fromFileNamed: "sample.mp4") { (err) in
                     print(err)
                 }
@@ -125,14 +127,14 @@ class RTCClient: NSObject {
             }
         }
 
-        let localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource, trackId: "Test")
+        let localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource, trackId: "TestVideo")
         localVideoTrack.add(renderer)
 
-        let localStream = self.connectionFactory.mediaStream(withStreamId: "Test")
+        let localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest")
         localStream.addVideoTrack(localVideoTrack)
         self.peerConnection.add(localStream)
 
-        self.peerConnection.add(localVideoTrack, streamIds: ["Stream"])
+        self.peerConnection.add(localVideoTrack, streamIds: ["StreamVideo"])
     }
 
     func addIceCandidate(iceCandidate: RTCIceCandidate) {

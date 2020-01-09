@@ -18,7 +18,7 @@ import kotlin.coroutines.CoroutineContext
 
 class WebSocketClient : CoroutineScope {
     companion object {
-        private const val HOST_ADDRESS = "192.168.2.1"
+        private const val HOST_ADDRESS = "192.168.1.160"
     }
 
     val gson = Gson()

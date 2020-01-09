@@ -72,7 +72,7 @@ class RTCClient(
             override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
             }
         })
-        val mediaStreamLabels: List<String> = Collections.singletonList("streams")
+        val mediaStreamLabels: List<String> = Collections.singletonList("StreamAudio")
         peerConnection?.addTrack(localAudioTrack, mediaStreamLabels)
         peerConnection?.setAudioRecording(true)
         peerConnection?.setAudioPlayout(true)
@@ -112,12 +112,14 @@ class RTCClient(
 
         videoCapturer.startCapture(1920, 1080, 60)
 
-        val localVideoTrack = peerConnectionFactory.createVideoTrack("Test", localVideoSource)
+        val localVideoTrack = peerConnectionFactory.createVideoTrack("TestVideo", localVideoSource)
         localVideoTrack.addSink(renderer)
 
-        val localStream = peerConnectionFactory.createLocalMediaStream("Test")
+        val localStream = peerConnectionFactory.createLocalMediaStream("StreamTest")
         localStream.addTrack(localVideoTrack)
         peerConnection?.addStream(localStream)
+
+        peerConnection?.addTrack(localVideoTrack, mutableListOf("StreamVideo"))
     }
 
     fun configureRenderer(renderer: SurfaceViewRenderer) {
