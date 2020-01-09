@@ -1,0 +1,10 @@
+platform :ios, '9.0'
+inhibit_all_warnings!
+
+source 'https://github.com/CocoaPods/Specs.git'
+pod 'GoogleWebRTC'
+pod 'Starscream'
+
+target 'WebRTCApp'do
+    use_frameworks!
+end
