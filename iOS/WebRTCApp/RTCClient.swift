@@ -43,11 +43,11 @@ class RTCClient: NSObject {
 
         RTCPeerConnectionFactory.initialize()
 
-        //let audioTrack = self.audioTrack()
+        let audioTrack = self.audioTrack()
         let videoTrack = self.videoTrack()
         let localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest1")
         localStream.addVideoTrack(videoTrack)
-        //localStream.addAudioTrack(audioTrack)
+        localStream.addAudioTrack(audioTrack)
         self.peerConnection.add(localStream)
     }
 
@@ -102,8 +102,8 @@ class RTCClient: NSObject {
 
     func createAudioVideoConstraints() -> RTCMediaConstraints {
         return RTCMediaConstraints(mandatoryConstraints: [
-            "OfferToReceiveVideo": "true"//,
-         //   "OfferToReceiveAudio": "true"
+            "OfferToReceiveVideo": "true",
+            "OfferToReceiveAudio": "true"
         ], optionalConstraints: nil)
     }
 

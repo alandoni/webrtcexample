@@ -10,7 +10,7 @@ import UIKit
 import WebRTC
 import Foundation
 
-class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate, WebSocketClientDelegate {
+class ViewController: UIViewController, RTCClientDelegate, WebSocketClientDelegate {
 
     static let SERVER_URL_KEY = "serverUrl"
     static let TYPE_KEY = "type"
@@ -24,16 +24,9 @@ class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate,
     lazy var rtcClient: RTCClient? = nil
     lazy var webSocket: WebSocketClient? = nil
 
-    func videoView(_ videoView: RTCVideoRenderer, didChangeVideoSize size: CGSize) {
-
-    }
-
     override func viewDidLoad() {
         super.viewDidLoad()
         // Do any additional setup after loading the view.
-
-        self.rtcMyRenderer.delegate = self
-        self.rtcOtherRenderer.delegate = self
 
         self.rtcClient = RTCClient(observer: self)
         self.rtcClient?.initLocalVideo(renderer: self.rtcMyRenderer)
@@ -65,11 +58,9 @@ class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate,
     }
 
     func onAddStream(mediaStream: RTCMediaStream?) {
-        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { (Timer) in
-            let videoTrack = mediaStream?.videoTracks.first
-            videoTrack?.isEnabled = true
-            videoTrack?.add(self.rtcOtherRenderer)
-        }
+        let videoTrack = mediaStream?.videoTracks.first
+        videoTrack?.isEnabled = true
+        videoTrack?.add(self.rtcOtherRenderer)
     }
 
     func onConnect() {
