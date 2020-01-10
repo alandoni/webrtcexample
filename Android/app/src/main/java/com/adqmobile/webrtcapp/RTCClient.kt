@@ -7,11 +7,13 @@ import java.util.*
 
 class RTCClient(
     private val context: Context,
-    private val observer: RTCClientInterface)
+    private val observer: RTCClientInterface) : PeerConnection.Observer
 {
 
+    private var localVideoTrack: VideoTrack? = null
+    private var localVideoSource: VideoSource? = null
     private val rootEglBase: EglBase = EglBase.create()
-    private val peerConnectionFactory by lazy {
+    private val peerConnectionFactory: PeerConnectionFactory by lazy {
         return@lazy PeerConnectionFactory
             .builder()
             .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
@@ -22,7 +24,7 @@ class RTCClient(
             })
             .createPeerConnectionFactory()
     }
-    private val peerConnection by lazy {
+    private val peerConnection: PeerConnection by lazy {
         val iceServer = listOf(
             PeerConnection.IceServer
                 .builder("stun:stun.l.google.com:19302")
@@ -31,53 +33,32 @@ class RTCClient(
         //val remoteAudioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
         //val remoteAudioTrack = peerConnectionFactory.createAudioTrack("5555", remoteAudioSource)
 
-        //Local audio track
-        val localAudioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
-        val localAudioTrack = peerConnectionFactory.createAudioTrack("TestAudio", localAudioSource)
-        localAudioTrack.setEnabled(true) //Enable audio
+        val mediaConstraints = MediaConstraints().apply {
+            optional.add(MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"))
+        }
+        val configurations = PeerConnection.RTCConfiguration(iceServer)
+        val peerConnection = peerConnectionFactory.createPeerConnection(configurations, mediaConstraints, this)!!
 
-        val peerConnection = peerConnectionFactory.createPeerConnection(iceServer, object: PeerConnection.Observer  {
-            override fun onIceCandidate(iceCandidate: IceCandidate?) {
-                observer.onIceCandidate(iceCandidate)
-            }
-
-            override fun onDataChannel(p0: DataChannel?) {
-            }
-
-            override fun onIceConnectionReceivingChange(p0: Boolean) {
-            }
-
-            override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
-            }
-
-            override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
-            }
-
-            override fun onAddStream(mediaStream: MediaStream?) {
-                observer.onAddStream(mediaStream)
-            }
-
-            override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
-            }
-
-            override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {
-            }
-
-            override fun onRemoveStream(p0: MediaStream?) {
-            }
-
-            override fun onRenegotiationNeeded() {
-            }
-
-            override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
-            }
-        })
-        val mediaStreamLabels: List<String> = Collections.singletonList("StreamAudio")
-        peerConnection?.addTrack(localAudioTrack, mediaStreamLabels)
-        peerConnection?.setAudioRecording(true)
-        peerConnection?.setAudioPlayout(true)
+        peerConnection.setAudioRecording(true)
+        peerConnection.setAudioPlayout(true)
 
         return@lazy peerConnection
+    }
+    private val sdpObserver = object: SdpObserver {
+        override fun onSetFailure(p0: String?) {
+            print(p0)
+        }
+
+        override fun onSetSuccess() {
+
+        }
+
+        override fun onCreateFailure(p0: String?) {
+            print(p0)
+        }
+
+        override fun onCreateSuccess(p0: SessionDescription?) {
+        }
     }
 
     init {
@@ -86,6 +67,20 @@ class RTCClient(
             .setFieldTrials("WebRTC-H264HighProfile/Enabled/")
             .createInitializationOptions()
         PeerConnectionFactory.initialize(options)
+
+        val localStream = peerConnectionFactory.createLocalMediaStream("StreamTest")
+        val audioTrack = createLocalAudioTrack()
+        val videoTrack = createLocalVideoTrack()
+        localStream.addTrack(audioTrack)
+        localStream.addTrack(videoTrack)
+        peerConnection.addStream(localStream)
+    }
+
+    private fun audioVideoMediaConstraints(): MediaConstraints {
+        return MediaConstraints().apply {
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
+            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
+        }
     }
 
     private fun getFrontVideoCapturer() = Camera2Enumerator(context).run {
@@ -105,21 +100,28 @@ class RTCClient(
 
     fun initLocalVideo(renderer: SurfaceViewRenderer) {
         val videoCapturer = getFrontVideoCapturer()
-        val localVideoSource = peerConnectionFactory.createVideoSource(false)
         val surfaceTextureHelper =
             SurfaceTextureHelper.create(Thread.currentThread().name, rootEglBase.eglBaseContext)
-        (videoCapturer as VideoCapturer).initialize(surfaceTextureHelper, context, localVideoSource.capturerObserver)
+        (videoCapturer as VideoCapturer).initialize(surfaceTextureHelper, context, localVideoSource?.capturerObserver)
 
         videoCapturer.startCapture(1920, 1080, 60)
+        localVideoTrack?.addSink(renderer)
+        localVideoTrack?.setEnabled(true)
+    }
 
-        val localVideoTrack = peerConnectionFactory.createVideoTrack("TestVideo", localVideoSource)
-        localVideoTrack.addSink(renderer)
+    private fun createLocalVideoTrack() : VideoTrack {
+        localVideoSource = peerConnectionFactory.createVideoSource(false)
+        localVideoTrack =
+            peerConnectionFactory.createVideoTrack("TestVideo", localVideoSource)
+        return localVideoTrack!!
+    }
 
-        val localStream = peerConnectionFactory.createLocalMediaStream("StreamTest")
-        localStream.addTrack(localVideoTrack)
-        peerConnection?.addStream(localStream)
-
-        peerConnection?.addTrack(localVideoTrack, mutableListOf("StreamVideo"))
+    private fun createLocalAudioTrack() : AudioTrack {
+        //Local audio track
+        val localAudioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
+        val localAudioTrack = peerConnectionFactory.createAudioTrack("TestAudio", localAudioSource)
+        localAudioTrack.setEnabled(true) //Enable audio
+        return localAudioTrack
     }
 
     fun configureRenderer(renderer: SurfaceViewRenderer) {
@@ -129,99 +131,70 @@ class RTCClient(
     }
 
     fun startCall() {
-        val constraints = MediaConstraints().apply {
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        }
+        val constraints = audioVideoMediaConstraints()
 
-        peerConnection?.createOffer(object : SdpObserver {
-            override fun onSetFailure(p0: String?) {
-                print(p0)
-            }
-
-            override fun onSetSuccess() {
-
-            }
-
+        peerConnection.createOffer(object : SdpObserver by sdpObserver {
             override fun onCreateSuccess(description: SessionDescription?) {
-                peerConnection?.setLocalDescription(object : SdpObserver {
-                    override fun onSetFailure(p0: String?) {
-                        print(p0)
-                    }
-
-                    override fun onSetSuccess() {
-                    }
-
-                    override fun onCreateSuccess(p0: SessionDescription?) {
-                    }
-
-                    override fun onCreateFailure(p0: String?) {
-                        print(p0)
-                    }
-                }, description)
+                peerConnection.setLocalDescription(sdpObserver, description)
                 observer.onCreateSuccess(description)
-            }
-
-            override fun onCreateFailure(p0: String?) {
-                print(p0)
             }
 
         }, constraints)
     }
 
-    fun answerCall() {
-        val constraints = MediaConstraints().apply {
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveVideo", "true"))
-            mandatory.add(MediaConstraints.KeyValuePair("OfferToReceiveAudio", "true"))
-        }
+    fun answerCall(sessionDescription: SessionDescription) {
+        onRemoteSessionReceived(sessionDescription)
+        val constraints = audioVideoMediaConstraints()
 
-        peerConnection?.createAnswer(object : SdpObserver {
-            override fun onSetFailure(p0: String?) {
-            }
-
-            override fun onSetSuccess() {
-            }
-
+        peerConnection.createAnswer(object : SdpObserver by sdpObserver {
             override fun onCreateSuccess(description: SessionDescription?) {
-                peerConnection?.setLocalDescription(object : SdpObserver {
-                    override fun onSetFailure(p0: String?) {
-                    }
-
-                    override fun onSetSuccess() {
-                    }
-
-                    override fun onCreateSuccess(p0: SessionDescription?) {
-                    }
-
-                    override fun onCreateFailure(p0: String?) {
-                    }
-                }, description)
+                peerConnection.setLocalDescription(sdpObserver, description)
                 observer.onCreateSuccess(description)
-            }
-
-            override fun onCreateFailure(p0: String?) {
             }
         }, constraints)
     }
 
     fun onRemoteSessionReceived(sessionDescription: SessionDescription) {
-        peerConnection?.setRemoteDescription(object : SdpObserver {
-            override fun onSetFailure(p0: String?) {
-            }
-
-            override fun onSetSuccess() {
-            }
-
-            override fun onCreateSuccess(p0: SessionDescription?) {
-            }
-
-            override fun onCreateFailure(p0: String?) {
-            }
-        }, sessionDescription)
+        peerConnection.setRemoteDescription(sdpObserver, sessionDescription)
     }
 
     fun addIceCandidate(iceCandidate: IceCandidate?) {
-        peerConnection?.addIceCandidate(iceCandidate)
+        peerConnection.addIceCandidate(iceCandidate)
+    }
+
+    override fun onIceCandidate(iceCandidate: IceCandidate?) {
+        observer.onIceCandidate(iceCandidate)
+    }
+
+    override fun onDataChannel(p0: DataChannel?) {
+    }
+
+    override fun onIceConnectionReceivingChange(p0: Boolean) {
+    }
+
+    override fun onIceConnectionChange(p0: PeerConnection.IceConnectionState?) {
+    }
+
+    override fun onIceGatheringChange(p0: PeerConnection.IceGatheringState?) {
+    }
+
+    override fun onAddStream(mediaStream: MediaStream?) {
+        observer.onAddStream(mediaStream)
+    }
+
+    override fun onSignalingChange(p0: PeerConnection.SignalingState?) {
+    }
+
+    override fun onIceCandidatesRemoved(p0: Array<out IceCandidate>?) {
+    }
+
+    override fun onRemoveStream(p0: MediaStream?) {
+    }
+
+    override fun onRenegotiationNeeded() {
+    }
+
+    override fun onAddTrack(p0: RtpReceiver?, p1: Array<out MediaStream>?) {
     }
 
     interface RTCClientInterface {
@@ -230,3 +203,4 @@ class RTCClient(
         fun onAddStream(mediaStream: MediaStream?)
     }
 }
+

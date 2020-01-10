@@ -11,14 +11,17 @@ import io.ktor.client.features.websocket.ws
 import io.ktor.http.HttpMethod
 import io.ktor.http.cio.websocket.Frame
 import io.ktor.http.cio.websocket.readText
+import io.ktor.util.KtorExperimentalAPI
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.ConflatedBroadcastChannel
 import kotlinx.coroutines.channels.ReceiveChannel
 import kotlin.coroutines.CoroutineContext
 
+@KtorExperimentalAPI
+@ExperimentalCoroutinesApi
 class WebSocketClient : CoroutineScope {
     companion object {
-        private const val HOST_ADDRESS = "192.168.1.160"
+        private const val HOST_ADDRESS = "192.168.2.1"
     }
 
     val gson = Gson()
@@ -41,7 +44,10 @@ class WebSocketClient : CoroutineScope {
             val sendData = sendChannel.openSubscription()
             try {
                 while (true) {
-                    sendMessage(sendData)
+                    val message = sendData.poll()
+                    if (message != null) {
+                        outgoing.send(Frame.Text(message))
+                    }
                     receiveData()
                 }
             } catch (exception: Throwable) {
@@ -70,7 +76,8 @@ class WebSocketClient : CoroutineScope {
     }
 
     fun send(data: Any?) = runBlocking {
-        sendChannel.send(gson.toJson(data))
+        val obj = gson.toJson(data)!!
+        sendChannel.send(obj)
     }
 
     fun destroy() {

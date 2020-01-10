@@ -16,7 +16,7 @@ struct SessionDescription: Codable {
 
 struct Candidate: Codable {
     let sdp: String
-    let sdpMLineIndex: Int
+    let sdpMLineIndex: Int32
     let sdpMid: String?
     let serverUrl: String?
 }

@@ -49,7 +49,7 @@ class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate,
 
     func onIceCandidate(iceCandidate: RTCIceCandidate?) {
         if (iceCandidate != nil) {
-            let candidate = Candidate(sdp: iceCandidate!.sdp, sdpMLineIndex: Int(iceCandidate!.sdpMLineIndex), sdpMid: iceCandidate!.sdpMid, serverUrl: iceCandidate?.serverUrl ?? "")
+            let candidate = Candidate(sdp: iceCandidate!.sdp, sdpMLineIndex: iceCandidate!.sdpMLineIndex, sdpMid: iceCandidate!.sdpMid, serverUrl: iceCandidate?.serverUrl ?? "")
             self.webSocket?.send(object: candidate)
             self.rtcClient?.addIceCandidate(iceCandidate: iceCandidate!)
         }
@@ -65,7 +65,11 @@ class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate,
     }
 
     func onAddStream(mediaStream: RTCMediaStream?) {
-        mediaStream?.videoTracks.first?.add(self.rtcOtherRenderer)
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { (Timer) in
+            let videoTrack = mediaStream?.videoTracks.first
+            videoTrack?.isEnabled = true
+            videoTrack?.add(self.rtcOtherRenderer)
+        }
     }
 
     func onConnect() {
@@ -78,20 +82,19 @@ class ViewController: UIViewController, RTCVideoViewDelegate, RTCClientDelegate,
             let data = try JSONSerialization.jsonObject(with: messageData, options: []) as! [String: Any?]
             if (data[ViewController.SERVER_URL_KEY] != nil) {
                 let candidate = try JSONDecoder().decode(Candidate.self, from: messageData)
-                let iceCandidate = RTCIceCandidate(sdp: candidate.sdp, sdpMLineIndex: Int32(candidate.sdpMLineIndex), sdpMid: candidate.sdpMid)
+                let iceCandidate = RTCIceCandidate(sdp: candidate.sdp, sdpMLineIndex: candidate.sdpMLineIndex, sdpMid: candidate.sdpMid)
                 self.rtcClient?.addIceCandidate(iceCandidate: iceCandidate)
             } else if (data[ViewController.TYPE_KEY] != nil) {
                 let description = try JSONDecoder().decode(SessionDescription.self, from: messageData)
                 let type = data[ViewController.TYPE_KEY] as! String
                 if (type == ViewController.OFFER) {
                     let sessionDescription = RTCSessionDescription(type: .offer, sdp: description.description)
-                    self.rtcClient?.didReceiveRemoteSession(sessionDescription: sessionDescription)
-                    self.rtcClient?.answerCall()
-                    self.rtcOtherRenderer.isHidden = false
+                    self.rtcClient?.answerCall(sessionDescription: sessionDescription)
                 } else {
                     let sessionDescription = RTCSessionDescription(type: .answer, sdp: description.description)
                     self.rtcClient?.didReceiveRemoteSession(sessionDescription: sessionDescription)
                 }
+                self.rtcOtherRenderer.isHidden = false
             }
         } catch {
             print(error)

@@ -34,26 +34,81 @@ class RTCClient: NSObject {
                                                                     delegate: self)
     }()
 
+    lazy var localVideoSource: RTCVideoSource? = nil
+    lazy var localVideoTrack: RTCVideoTrack? = nil
+
     init(observer: RTCClientDelegate) {
         self.observer = observer
         super.init()
 
         RTCPeerConnectionFactory.initialize()
 
-        let audioTrack = self.audioTrack()
-        let labels = ["StreamAudio"]
-        self.peerConnection.add(audioTrack, streamIds: labels)
+        //let audioTrack = self.audioTrack()
+        let videoTrack = self.videoTrack()
+        let localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest1")
+        localStream.addVideoTrack(videoTrack)
+        //localStream.addAudioTrack(audioTrack)
+        self.peerConnection.add(localStream)
     }
 
     func audioTrack() -> RTCAudioTrack {
         let localAudioSource = self.connectionFactory.audioSource(with: nil)
-        let localAudioTrack = self.connectionFactory.audioTrack(with: localAudioSource, trackId: "TestAudio")
+        let localAudioTrack = self.connectionFactory.audioTrack(with: localAudioSource, trackId: "TestAudio1")
         localAudioTrack.isEnabled = true
         return localAudioTrack
     }
 
+    func getFrontVideoCapturer() -> AVCaptureDevice? {
+        let devices = RTCCameraVideoCapturer.captureDevices()
+
+        if (devices.isEmpty) {
+            return nil
+        }
+
+        let camera = RTCCameraVideoCapturer.captureDevices().filter { (device: AVCaptureDevice) -> Bool in
+            device.position == AVCaptureDevice.Position.front
+        }
+        if (camera.count > 0) {
+            return camera[0]
+        } else {
+            return devices[0]
+        }
+    }
+
+    func videoTrack() -> RTCVideoTrack {
+        localVideoSource = self.connectionFactory.videoSource()
+        localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource!, trackId: "TestVideo1")
+        return localVideoTrack!
+    }
+
+    func initLocalVideo(renderer: RTCEAGLVideoView) {
+        let device = getFrontVideoCapturer()
+        if (device != nil) {
+            let capturer = RTCCameraVideoCapturer(delegate: self.localVideoSource!)
+            capturer.startCapture(with: device!, format: RTCCameraVideoCapturer.supportedFormats(for: device!).last!, fps: 60)
+        } else {
+            let capturer = RTCFileVideoCapturer(delegate: self.localVideoSource!)
+            if let _ = Bundle.main.url(forResource: "sample", withExtension: "mp4") {
+                capturer.startCapturing(fromFileNamed: "sample.mp4") { (err) in
+                    print(err)
+                }
+            } else {
+                print("File not found")
+            }
+        }
+
+        localVideoTrack?.add(renderer)
+    }
+
+    func createAudioVideoConstraints() -> RTCMediaConstraints {
+        return RTCMediaConstraints(mandatoryConstraints: [
+            "OfferToReceiveVideo": "true"//,
+         //   "OfferToReceiveAudio": "true"
+        ], optionalConstraints: nil)
+    }
+
     func startCall() {
-        let constraints = RTCMediaConstraints(mandatoryConstraints: ["OfferToReceiveVideo": "true", "OfferToReceiveAudio": "true"], optionalConstraints: nil)
+        let constraints = createAudioVideoConstraints()
         self.peerConnection.offer(for: constraints, completionHandler: { (description: RTCSessionDescription?, error: Error?) in
             if (error != nil) {
                 print("Error making offer: \(error.debugDescription)")
@@ -68,8 +123,9 @@ class RTCClient: NSObject {
         })
     }
 
-    func answerCall() {
-        let constraints = RTCMediaConstraints(mandatoryConstraints: ["OfferToReceiveVideo": "true", "OfferToReceiveAudio": "true"], optionalConstraints: nil)
+    func answerCall(sessionDescription: RTCSessionDescription) {
+        didReceiveRemoteSession(sessionDescription: sessionDescription)
+        let constraints = self.createAudioVideoConstraints()
         self.peerConnection.answer(for: constraints, completionHandler: { (description: RTCSessionDescription?, error: Error?) in
             if (error != nil) {
                 print("Error answering: \(error.debugDescription)")
@@ -90,51 +146,6 @@ class RTCClient: NSObject {
                 print("Error answering: \(error.debugDescription)")
             }
         })
-    }
-
-    func getFrontVideoCapturer() -> AVCaptureDevice? {
-        let devices = RTCCameraVideoCapturer.captureDevices()
-
-        if (devices.isEmpty) {
-            return nil
-        }
-
-        let camera = RTCCameraVideoCapturer.captureDevices().filter { (device: AVCaptureDevice) -> Bool in
-            device.position == AVCaptureDevice.Position.front
-        }
-        if (camera.count > 0) {
-            return camera[0]
-        } else {
-            return devices[0]
-        }
-    }
-
-    func initLocalVideo(renderer: RTCEAGLVideoView) {
-        let localVideoSource = self.connectionFactory.videoSource()
-
-        let device = getFrontVideoCapturer()
-        if (device != nil) {
-            let capturer = RTCCameraVideoCapturer(delegate: localVideoSource)
-            capturer.startCapture(with: device!, format: RTCCameraVideoCapturer.supportedFormats(for: device!).last!, fps: 60)
-        } else {
-            let capturer = RTCFileVideoCapturer(delegate: localVideoSource)
-            if let _ = Bundle.main.url(forResource: "sample", withExtension: "mp4") {
-                capturer.startCapturing(fromFileNamed: "sample.mp4") { (err) in
-                    print(err)
-                }
-            } else {
-                print("File not found")
-            }
-        }
-
-        let localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource, trackId: "TestVideo")
-        localVideoTrack.add(renderer)
-
-        let localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest")
-        localStream.addVideoTrack(localVideoTrack)
-        self.peerConnection.add(localStream)
-
-        self.peerConnection.add(localVideoTrack, streamIds: ["StreamVideo"])
     }
 
     func addIceCandidate(iceCandidate: RTCIceCandidate) {

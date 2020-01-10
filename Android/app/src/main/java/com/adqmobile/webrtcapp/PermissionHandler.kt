@@ -21,7 +21,7 @@ class PermissionHandler(
         if (ContextCompat.checkSelfPermission(context, permissionType.value) != PackageManager.PERMISSION_GRANTED) {
             requestPermission()
         } else {
-            listener.onPermissionGranted()
+            listener.onPermissionGranted(permissionType)
         }
     }
 
@@ -50,19 +50,19 @@ class PermissionHandler(
             }
             .setNegativeButton("Deny") { dialog, _ ->
                 dialog.dismiss()
-                onCameraPermissionDenied()
+                onPermissionDenied()
             }
             .show()
     }
 
-    private fun onCameraPermissionDenied() {
+    private fun onPermissionDenied() {
         Toast.makeText(context, "Camera Permission Denied", Toast.LENGTH_LONG).show()
-        listener.onPermissionDenied()
+        listener.onPermissionDenied(permissionType)
     }
 
     interface PermissionHandlerListener {
-        fun onPermissionGranted()
-        fun onPermissionDenied()
+        fun onPermissionGranted(permissionType: PermissionType)
+        fun onPermissionDenied(permissionType: PermissionType)
     }
 
     enum class PermissionType(val value: String) {
