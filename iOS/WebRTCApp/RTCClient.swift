@@ -15,7 +15,9 @@ class RTCClient: NSObject {
 
     lazy var connectionFactory: RTCPeerConnectionFactory = {
         [unowned self] in
-        let connectionFactory = RTCPeerConnectionFactory(encoderFactory: RTCDefaultVideoEncoderFactory(), decoderFactory: RTCDefaultVideoDecoderFactory())
+        let connectionFactory = RTCPeerConnectionFactory(
+            encoderFactory: RTCDefaultVideoEncoderFactory(),
+            decoderFactory: RTCDefaultVideoDecoderFactory())
         let rtcOptions = RTCPeerConnectionFactoryOptions()
         rtcOptions.disableEncryption = true
         rtcOptions.disableNetworkMonitor = true
@@ -27,15 +29,16 @@ class RTCClient: NSObject {
         [unowned self] in
         let configuration = RTCConfiguration()
         configuration.iceServers = [RTCIceServer(urlStrings: ["stun:stun.l.google.com:19302"])]
-        let defaultConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: ["DtlsSrtpKeyAgreement": "true"])
+        let defaultConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: /*["DtlsSrtpKeyAgreement": "true"]*/nil)
 
         return self.connectionFactory.peerConnection(with: configuration,
                                                                     constraints: defaultConstraints,
                                                                     delegate: self)
     }()
 
-    lazy var localVideoSource: RTCVideoSource? = nil
-    lazy var localVideoTrack: RTCVideoTrack? = nil
+    lazy var localStream: RTCMediaStream? = nil
+
+    lazy var remoteStream: RTCMediaStream? = nil
 
     init(observer: RTCClientDelegate) {
         self.observer = observer
@@ -45,14 +48,15 @@ class RTCClient: NSObject {
 
         let audioTrack = self.audioTrack()
         let videoTrack = self.videoTrack()
-        let localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest1")
-        localStream.addVideoTrack(videoTrack)
-        localStream.addAudioTrack(audioTrack)
-        self.peerConnection.add(localStream)
+        self.localStream = self.connectionFactory.mediaStream(withStreamId: "StreamTest1")
+        self.localStream!.addVideoTrack(videoTrack)
+        self.localStream!.addAudioTrack(audioTrack)
+        self.peerConnection.add(self.localStream!)
     }
 
     func audioTrack() -> RTCAudioTrack {
-        let localAudioSource = self.connectionFactory.audioSource(with: nil)
+        let audioConstrains = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        let localAudioSource = self.connectionFactory.audioSource(with: audioConstrains)
         let localAudioTrack = self.connectionFactory.audioTrack(with: localAudioSource, trackId: "TestAudio1")
         localAudioTrack.isEnabled = true
         return localAudioTrack
@@ -76,18 +80,19 @@ class RTCClient: NSObject {
     }
 
     func videoTrack() -> RTCVideoTrack {
-        localVideoSource = self.connectionFactory.videoSource()
-        localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource!, trackId: "TestVideo1")
-        return localVideoTrack!
+        let localVideoSource = self.connectionFactory.videoSource()
+        let localVideoTrack = self.connectionFactory.videoTrack(with: localVideoSource, trackId: "TestVideo1")
+        return localVideoTrack
     }
 
     func initLocalVideo(renderer: RTCEAGLVideoView) {
         let device = getFrontVideoCapturer()
+        let videoSource = self.localStream!.videoTracks.first!.source
         if (device != nil) {
-            let capturer = RTCCameraVideoCapturer(delegate: self.localVideoSource!)
+            let capturer = RTCCameraVideoCapturer(delegate: videoSource)
             capturer.startCapture(with: device!, format: RTCCameraVideoCapturer.supportedFormats(for: device!).last!, fps: 60)
         } else {
-            let capturer = RTCFileVideoCapturer(delegate: self.localVideoSource!)
+            let capturer = RTCFileVideoCapturer(delegate: videoSource)
             if let _ = Bundle.main.url(forResource: "sample", withExtension: "mp4") {
                 capturer.startCapturing(fromFileNamed: "sample.mp4") { (err) in
                     print(err)
@@ -97,14 +102,14 @@ class RTCClient: NSObject {
             }
         }
 
-        localVideoTrack?.add(renderer)
+        self.localStream!.videoTracks.first!.add(renderer)
     }
 
     func createAudioVideoConstraints() -> RTCMediaConstraints {
-        return RTCMediaConstraints(mandatoryConstraints: [
+        return RTCMediaConstraints(mandatoryConstraints: nil/*[
             "OfferToReceiveVideo": "true",
             "OfferToReceiveAudio": "true"
-        ], optionalConstraints: nil)
+        ]*/, optionalConstraints: nil)
     }
 
     func startCall() {
@@ -159,10 +164,35 @@ extension RTCClient: RTCPeerConnectionDelegate {
     }
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange stateChanged: RTCSignalingState) {
-
+        var state: String? = nil
+        switch (stateChanged) {
+        case .closed:
+            state = "closed"
+            break
+        case .stable:
+            state = "stable"
+            break
+        case .haveLocalOffer:
+            state = "haveLocalOffer"
+            break
+        case .haveLocalPrAnswer:
+            state = "haveLocalPrAnswer"
+            break
+        case .haveRemoteOffer:
+            state = "haveRemoteOffer"
+            break
+        case .haveRemotePrAnswer:
+            state = "haveRemotePrAnswer"
+            break
+        default:
+            state = ""
+            break
+        }
+        print("Signaling state: \(state!)")
     }
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didAdd stream: RTCMediaStream) {
+        self.remoteStream = stream
         observer.onAddStream(mediaStream: stream)
     }
 
@@ -171,11 +201,56 @@ extension RTCClient: RTCPeerConnectionDelegate {
     }
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceConnectionState) {
-
+        var state: String? = nil
+        switch (newState) {
+        case .checking:
+            state = "checking"
+            break
+        case .closed:
+            state = "closed"
+            break
+        case .completed:
+            state = "completed"
+            break
+        case .connected:
+            state = "connected"
+            break
+        case .count:
+            state = "count"
+            break
+        case .disconnected:
+            state = "disconnected"
+            break
+        case .failed:
+            state = "failed"
+            break
+        case .new:
+            state = "new"
+            break
+        default:
+            state = ""
+            break
+        }
+        print("ICE state: \(state!)")
     }
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didChange newState: RTCIceGatheringState) {
-
+        var state: String? = nil
+        switch (newState) {
+        case .complete:
+            state = "checking"
+            break
+        case .gathering:
+            state = "closed"
+            break
+        case .new:
+            state = "new"
+            break
+        default:
+            state = "haveRemotePrAnswer"
+            break
+        }
+        print("ICE gather state: \(state!)")
     }
 
     func peerConnection(_ peerConnection: RTCPeerConnection, didGenerate candidate: RTCIceCandidate) {

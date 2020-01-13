@@ -10,8 +10,10 @@ class RTCClient(
     private val observer: RTCClientInterface) : PeerConnection.Observer
 {
 
-    private var localVideoTrack: VideoTrack? = null
     private var localVideoSource: VideoSource? = null
+    private var localStream: MediaStream? = null
+    private var remoteStream: MediaStream? = null
+
     private val rootEglBase: EglBase = EglBase.create()
     private val peerConnectionFactory: PeerConnectionFactory by lazy {
         return@lazy PeerConnectionFactory
@@ -30,14 +32,9 @@ class RTCClient(
                 .builder("stun:stun.l.google.com:19302")
                 .createIceServer()
         )
-        //val remoteAudioSource = peerConnectionFactory.createAudioSource(MediaConstraints())
-        //val remoteAudioTrack = peerConnectionFactory.createAudioTrack("5555", remoteAudioSource)
 
-        val mediaConstraints = MediaConstraints().apply {
-            optional.add(MediaConstraints.KeyValuePair("DtlsSrtpKeyAgreement", "true"))
-        }
         val configurations = PeerConnection.RTCConfiguration(iceServer)
-        val peerConnection = peerConnectionFactory.createPeerConnection(configurations, mediaConstraints, this)!!
+        val peerConnection = peerConnectionFactory.createPeerConnection(configurations, this)!!
 
         peerConnection.setAudioRecording(true)
         peerConnection.setAudioPlayout(true)
@@ -68,12 +65,12 @@ class RTCClient(
             .createInitializationOptions()
         PeerConnectionFactory.initialize(options)
 
-        val localStream = peerConnectionFactory.createLocalMediaStream("StreamTest")
+        localStream = peerConnectionFactory.createLocalMediaStream("StreamTest")
         val audioTrack = createLocalAudioTrack()
         val videoTrack = createLocalVideoTrack()
-        localStream.addTrack(audioTrack)
-        localStream.addTrack(videoTrack)
-        peerConnection.addStream(localStream)
+        localStream!!.addTrack(audioTrack)
+        localStream!!.addTrack(videoTrack)
+        peerConnection.addStream(localStream!!)
     }
 
     private fun audioVideoMediaConstraints(): MediaConstraints {
@@ -99,6 +96,8 @@ class RTCClient(
     }
 
     fun initLocalVideo(renderer: SurfaceViewRenderer) {
+        val localVideoTrack = localStream!!.videoTracks[0]
+        
         val videoCapturer = getFrontVideoCapturer()
         val surfaceTextureHelper =
             SurfaceTextureHelper.create(Thread.currentThread().name, rootEglBase.eglBaseContext)
@@ -111,7 +110,7 @@ class RTCClient(
 
     private fun createLocalVideoTrack() : VideoTrack {
         localVideoSource = peerConnectionFactory.createVideoSource(false)
-        localVideoTrack =
+        val localVideoTrack =
             peerConnectionFactory.createVideoTrack("TestVideo", localVideoSource)
         return localVideoTrack!!
     }
@@ -179,6 +178,7 @@ class RTCClient(
     }
 
     override fun onAddStream(mediaStream: MediaStream?) {
+        remoteStream = mediaStream
         observer.onAddStream(mediaStream)
     }
 

@@ -47,6 +47,8 @@
 		9D7E1617A79E5F90875AF8C4 /* Pods-WebRTCApp.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-WebRTCApp.release.xcconfig"; path = "Target Support Files/Pods-WebRTCApp/Pods-WebRTCApp.release.xcconfig"; sourceTree = "<group>"; };
 		B068D4CA359938BBEA54F30D /* Pods_WebRTCApp.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_WebRTCApp.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		C13E1CA523C66260002AD25A /* SessionDescription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SessionDescription.swift; sourceTree = "<group>"; };
+		C17C076A23CCB00800FCC3F9 /* WebRTC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WebRTC.framework; path = ../../../Downloads/WebRTC.framework; sourceTree = "<group>"; };
+		C17C076E23CCB02F00FCC3F9 /* WebRTC.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = WebRTC.framework; sourceTree = "<group>"; };
 		C1B218A123C6138C00866132 /* WebRTCApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WebRTCApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1B218A423C6138C00866132 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C1B218A623C6138C00866132 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 				C1B218A223C6138C00866132 /* Products */,
 				55AC96AF11878CE1055586EE /* Pods */,
 				CAD3057F1AE44D62AAE54A7F /* Frameworks */,
+				C17C076E23CCB02F00FCC3F9 /* WebRTC.framework */,
 			);
 			sourceTree = "<group>";
 		};
@@ -168,6 +171,7 @@
 		CAD3057F1AE44D62AAE54A7F /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				C17C076A23CCB00800FCC3F9 /* WebRTC.framework */,
 				B068D4CA359938BBEA54F30D /* Pods_WebRTCApp.framework */,
 			);
 			name = Frameworks;
@@ -446,6 +450,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_BITCODE = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -462,7 +467,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -506,6 +511,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_BITCODE = NO;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				GCC_C_LANGUAGE_STANDARD = gnu11;
@@ -516,7 +522,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 13.2;
+				IPHONEOS_DEPLOYMENT_TARGET = 12.4;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
@@ -532,13 +538,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TNNWH3KQWJ;
+				DEVELOPMENT_TEAM = CZ4YFCVEP7;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = WebRTCApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = adqmobile.WebRTCApp;
+				PRODUCT_BUNDLE_IDENTIFIER = adqmobile.WebRTCTestApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -551,13 +561,17 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
-				DEVELOPMENT_TEAM = TNNWH3KQWJ;
+				DEVELOPMENT_TEAM = CZ4YFCVEP7;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)",
+				);
 				INFOPLIST_FILE = WebRTCApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				PRODUCT_BUNDLE_IDENTIFIER = adqmobile.WebRTCApp;
+				PRODUCT_BUNDLE_IDENTIFIER = adqmobile.WebRTCTestApp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";

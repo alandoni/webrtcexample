@@ -3,4 +3,22 @@
    uuid = "08DD732D-25BF-435D-9732-FE05154EED64"
    type = "0"
    version = "2.0">
+   <Breakpoints>
+      <BreakpointProxy
+         BreakpointExtensionID = "Xcode.Breakpoint.FileBreakpoint">
+         <BreakpointContent
+            uuid = "06EE9151-3BEE-4BAF-9D97-29EEB719554F"
+            shouldBeEnabled = "No"
+            ignoreCount = "0"
+            continueAfterRunningActions = "No"
+            filePath = "WebRTCApp/ViewController.swift"
+            startingColumnNumber = "9223372036854775807"
+            endingColumnNumber = "9223372036854775807"
+            startingLineNumber = "62"
+            endingLineNumber = "62"
+            landmarkName = "onAddStream(mediaStream:)"
+            landmarkType = "7">
+         </BreakpointContent>
+      </BreakpointProxy>
+   </Breakpoints>
 </Bucket>

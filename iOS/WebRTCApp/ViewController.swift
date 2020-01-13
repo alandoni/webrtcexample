@@ -58,9 +58,11 @@ class ViewController: UIViewController, RTCClientDelegate, WebSocketClientDelega
     }
 
     func onAddStream(mediaStream: RTCMediaStream?) {
-        let videoTrack = mediaStream?.videoTracks.first
-        videoTrack?.isEnabled = true
-        videoTrack?.add(self.rtcOtherRenderer)
+        Timer.scheduledTimer(withTimeInterval: 2.0, repeats: false) { [unowned self] (Timer) in
+            let videoTrack = mediaStream?.videoTracks.first
+            videoTrack?.isEnabled = true
+            videoTrack?.add(self.rtcOtherRenderer)
+        }.fire()
     }
 
     func onConnect() {
