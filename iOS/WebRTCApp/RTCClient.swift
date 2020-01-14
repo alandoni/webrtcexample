@@ -19,7 +19,7 @@ class RTCClient: NSObject {
             encoderFactory: RTCDefaultVideoEncoderFactory(),
             decoderFactory: RTCDefaultVideoDecoderFactory())
         let rtcOptions = RTCPeerConnectionFactoryOptions()
-        rtcOptions.disableEncryption = true
+        rtcOptions.disableEncryption = false
         rtcOptions.disableNetworkMonitor = true
         connectionFactory.setOptions(rtcOptions)
         return connectionFactory
@@ -29,8 +29,7 @@ class RTCClient: NSObject {
         [unowned self] in
         let configuration = RTCConfiguration()
         configuration.iceServers = [RTCIceServer(urlStrings: ["stun:stun.l.google.com:19302"])]
-        let defaultConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: /*["DtlsSrtpKeyAgreement": "true"]*/nil)
-
+        let defaultConstraints = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: ["DtlsSrtpKeyAgreement": "true"])
         return self.connectionFactory.peerConnection(with: configuration,
                                                                     constraints: defaultConstraints,
                                                                     delegate: self)
@@ -55,7 +54,7 @@ class RTCClient: NSObject {
     }
 
     func audioTrack() -> RTCAudioTrack {
-        let audioConstrains = RTCMediaConstraints(mandatoryConstraints: nil, optionalConstraints: nil)
+        let audioConstrains = self.createAudioVideoConstraints()
         let localAudioSource = self.connectionFactory.audioSource(with: audioConstrains)
         let localAudioTrack = self.connectionFactory.audioTrack(with: localAudioSource, trackId: "TestAudio1")
         localAudioTrack.isEnabled = true
@@ -106,10 +105,10 @@ class RTCClient: NSObject {
     }
 
     func createAudioVideoConstraints() -> RTCMediaConstraints {
-        return RTCMediaConstraints(mandatoryConstraints: nil/*[
+        return RTCMediaConstraints(mandatoryConstraints: [
             "OfferToReceiveVideo": "true",
             "OfferToReceiveAudio": "true"
-        ]*/, optionalConstraints: nil)
+        ], optionalConstraints: nil)
     }
 
     func startCall() {

@@ -2,7 +2,6 @@ package com.adqmobile.webrtcapp
 
 import android.content.Context
 import org.webrtc.*
-import java.util.*
 
 
 class RTCClient(
@@ -21,7 +20,7 @@ class RTCClient(
             .setVideoDecoderFactory(DefaultVideoDecoderFactory(rootEglBase.eglBaseContext))
             .setVideoEncoderFactory(DefaultVideoEncoderFactory(rootEglBase.eglBaseContext, true, true))
             .setOptions(PeerConnectionFactory.Options().apply {
-                disableEncryption = true
+                disableEncryption = false
                 disableNetworkMonitor = true
             })
             .createPeerConnectionFactory()

@@ -71,6 +71,7 @@ class ViewController: UIViewController, RTCClientDelegate, WebSocketClientDelega
 
     func onMessageReceived(message: String) {
         do {
+            print(message)
             let messageData = message.data(using: .utf8)!
             let data = try JSONSerialization.jsonObject(with: messageData, options: []) as! [String: Any?]
             if (data[ViewController.SERVER_URL_KEY] != nil) {

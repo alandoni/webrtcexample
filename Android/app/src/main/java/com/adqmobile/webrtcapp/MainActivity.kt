@@ -71,13 +71,14 @@ class MainActivity : AppCompatActivity(), RTCClient.RTCClientInterface, WebSocke
     }
 
     override fun onMessageReceived(message: String) {
+        print(message)
         val data = webSocketClient.gson.fromJson(message, JsonObject::class.java)
 
         if (data.has(TYPE_KEY)) {
             val sessionDescription = webSocketClient.gson.fromJson(data, SessionDescription::class.java)
-            if (data.get(TYPE_KEY).asString == OFFER) {
+            if (data.get(TYPE_KEY).asString.toLowerCase() == OFFER.toLowerCase()) {
                 rtcClient.answerCall(sessionDescription)
-            } else if (data.get(TYPE_KEY).asString == ANSWER) {
+            } else if (data.get(TYPE_KEY).asString.toLowerCase() == ANSWER.toLowerCase()) {
                 rtcClient.onRemoteSessionReceived(sessionDescription)
             }
             rtc_other_renderer.visibility = View.VISIBLE
