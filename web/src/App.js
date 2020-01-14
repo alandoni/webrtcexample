@@ -40,32 +40,21 @@ export default class App extends React.Component {
     }
 
     onMessage = async(message) => {
+        console.log(`Received message: ${message}`)
         let obj = JSON.parse(message);
-        try {
-            if (obj.type) {
-                if (obj.description) { 
-                    obj.sdp = obj.description.normalize()
-                    obj.type = obj.type.toLowerCase()
-                    delete obj.description
-                }
-                console.log(`Received message: ${JSON.stringify(obj)}`)
-                // if we get an offer, we need to reply with an answer
-                if (obj.type === 'offer') {
-                    await this.rtcClient.answerCall(obj);
-                    // const stream =
-                    //     await navigator.mediaDevices.getUserMedia(constraints);
-                    // stream.getTracks().forEach((track) =>
-                    //     pc.addTrack(track, stream));
-                } else if (obj.type === 'answer') {
-                    await this.rtcClient.onReceiveRemoteDescription(obj);
-                } else {
-                    console.log('Unsupported SDP type.');
-                }
-            } else {
-                await this.rtcClient.addIceCandidate(obj);
+        if (obj.type) {
+            if (obj.description) { 
+                obj.sdp = obj.description.normalize()
+                obj.type = obj.type.toLowerCase()
+                delete obj.description
             }
-        } catch (err) {
-            console.error(err);
+            if (obj.type === 'offer') {
+                await this.rtcClient.answerCall(obj);
+            } else if (obj.type === 'answer') {
+                await this.rtcClient.onReceiveRemoteDescription(obj);
+            } 
+        } else {
+            await this.rtcClient.addIceCandidate(obj);
         }
     };
 

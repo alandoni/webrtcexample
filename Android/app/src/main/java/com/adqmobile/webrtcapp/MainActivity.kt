@@ -76,9 +76,9 @@ class MainActivity : AppCompatActivity(), RTCClient.RTCClientInterface, WebSocke
 
         if (data.has(TYPE_KEY)) {
             val sessionDescription = webSocketClient.gson.fromJson(data, SessionDescription::class.java)
-            if (data.get(TYPE_KEY).asString.toLowerCase() == OFFER.toLowerCase()) {
+            if (data.get(TYPE_KEY).asString == OFFER) {
                 rtcClient.answerCall(sessionDescription)
-            } else if (data.get(TYPE_KEY).asString.toLowerCase() == ANSWER.toLowerCase()) {
+            } else if (data.get(TYPE_KEY).asString == ANSWER) {
                 rtcClient.onRemoteSessionReceived(sessionDescription)
             }
             rtc_other_renderer.visibility = View.VISIBLE

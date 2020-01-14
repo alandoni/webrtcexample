@@ -1,8 +1,8 @@
 export default class RTCClient {
 
     constructor() {
-        this.constraints = { audio: true, video: true };
-        this.descriptionConstraints = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+        this.constraints = { offerToReceiveAudio: true, offerToReceiveVideo: true };
+
         let configuration = { iceServers: [{ urls: 'stun:stun.example.org' }] };
         this.peerConnection = new RTCPeerConnection(configuration);
         this.peerConnection.onicecandidate = ({ candidate }) => {
@@ -19,7 +19,8 @@ export default class RTCClient {
 
     async startLocalVideo(view) {
         try {
-            const stream = await navigator.mediaDevices.getUserMedia(this.constraints);
+            let constraints = { audio: true, video: true };
+            const stream = await navigator.mediaDevices.getUserMedia(constraints);
             stream.getTracks().forEach((track) => {
                 this.peerConnection.addTrack(track, stream);
                 view.srcObject = stream;
@@ -37,14 +38,14 @@ export default class RTCClient {
 
     async startCall() {
         console.log("Creating offer")
-        await this.peerConnection.setLocalDescription(await this.peerConnection.createOffer(this.descriptionConstraints));
+        await this.peerConnection.setLocalDescription(await this.peerConnection.createOffer(this.constraints));
         this.onCreateSuccess(this.peerConnection.localDescription);
     }
 
     async answerCall(description) {
         await this.peerConnection.setRemoteDescription(description)
         console.log("Creating answer")
-        await this.peerConnection.setLocalDescription(await this.peerConnection.createAnswer(this.descriptionConstraints));
+        await this.peerConnection.setLocalDescription(await this.peerConnection.createAnswer(this.constraints));
         this.onCreateSuccess(this.peerConnection.localDescription);
     }
 
