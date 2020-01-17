@@ -17,6 +17,7 @@ class MainActivity : AppCompatActivity(), RTCClient.RTCClientInterface, WebSocke
 
     private lateinit var rtcClient: RTCClient
     private lateinit var webSocketClient: WebSocketClient
+    private lateinit var sipClient: SipClient
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -31,14 +32,17 @@ class MainActivity : AppCompatActivity(), RTCClient.RTCClientInterface, WebSocke
     }
 
     private fun initVideo() {
-        rtcClient = RTCClient(this, this)
-        rtcClient.configureRenderer(rtc_other_renderer)
-        rtcClient.configureRenderer(rtc_my_renderer)
-        rtcClient.initLocalVideo(rtc_my_renderer)
+        sipClient = SipClient(this, "1000", "1234")
+        sipClient.start()
 
-        webSocketClient = WebSocketClient()
-        webSocketClient.listener = this
-        webSocketClient.connect()
+//        rtcClient = RTCClient(this, this)
+//        rtcClient.configureRenderer(rtc_other_renderer)
+//        rtcClient.configureRenderer(rtc_my_renderer)
+//        rtcClient.initLocalVideo(rtc_my_renderer)
+//
+//        webSocketClient = WebSocketClient()
+//        webSocketClient.listener = this
+//        webSocketClient.connect()
     }
 
     override fun onDestroy() {
@@ -94,7 +98,17 @@ class MainActivity : AppCompatActivity(), RTCClient.RTCClientInterface, WebSocke
 
     override fun onPermissionGranted(permissionType: PermissionHandler.PermissionType) {
         if (permissionType == PermissionHandler.PermissionType.CAMERA) {
-            PermissionHandler(PermissionHandler.PermissionType.AUDIO, this@MainActivity, this).checkPermission()
+            PermissionHandler(
+                PermissionHandler.PermissionType.AUDIO,
+                this@MainActivity,
+                this
+            ).checkPermission()
+        } else if (permissionType == PermissionHandler.PermissionType.AUDIO) {
+            PermissionHandler(
+                PermissionHandler.PermissionType.SIP,
+                this@MainActivity,
+                this
+            ).checkPermission()
         } else {
             initVideo()
         }

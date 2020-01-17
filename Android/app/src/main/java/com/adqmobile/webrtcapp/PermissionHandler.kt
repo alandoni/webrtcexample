@@ -39,6 +39,8 @@ class PermissionHandler(
                 "Camera"
             PermissionType.AUDIO ->
                 "Microphone"
+            PermissionType.SIP ->
+                "SIP connection"
         }
 
         AlertDialog.Builder(context)
@@ -67,6 +69,7 @@ class PermissionHandler(
 
     enum class PermissionType(val value: String) {
         CAMERA(Manifest.permission.CAMERA),
-        AUDIO(Manifest.permission.RECORD_AUDIO)
+        AUDIO(Manifest.permission.RECORD_AUDIO),
+        SIP(Manifest.permission.USE_SIP)
     }
 }
